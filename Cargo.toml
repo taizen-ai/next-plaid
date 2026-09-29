@@ -1,5 +1,5 @@
 [workspace]
-members = ["next-plaid", "next-plaid-api", "next-plaid-onnx", "next-plaid-python", "colgrep"]
+members = ["next-plaid", "next-plaid-api", "next-plaid-onnx", "next-plaid-python", "colgrep", "taizen-bench"]
 resolver = "2"
 
 [workspace.package]

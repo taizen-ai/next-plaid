@@ -1,0 +1,27 @@
+name: mLateOn parity
+
+on:
+  pull_request:
+    paths: ["next-plaid-onnx/**", "taizen-bench/**", "Cargo.lock"]
+  workflow_dispatch:
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: astral-sh/setup-uv@v6
+      - run: sudo apt-get update && sudo apt-get install -y libopenblas-dev
+      - uses: actions/cache@v4
+        with:
+          path: ~/mlateon
+          key: mlateon-${{ hashFiles('taizen-bench/scripts/export_mlateon.py*', 'next-plaid-onnx/python/src/**') }}
+      - name: Export model
+        run: '[ -f ~/mlateon/model.onnx ] || uv run taizen-bench/scripts/export_mlateon.py ~/mlateon'
+      - name: Parity
+        run: |
+          export ORT_DYLIB_PATH=$(bash taizen-bench/scripts/ort-dylib.sh)
+          MLATEON_DIR=~/mlateon cargo test --release -p taizen-bench --features openblas \
+            --test mlateon_parity -- --ignored --nocapture

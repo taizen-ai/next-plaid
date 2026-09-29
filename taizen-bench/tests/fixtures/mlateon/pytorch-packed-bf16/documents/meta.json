@@ -1,0 +1,10 @@
+{
+  "model": "lightonai/mLateOn",
+  "revision": "edd378f99593c0ac8a15518b97ad89786b02685e",
+  "runtime": "pytorch-packed",
+  "dtype": "bfloat16",
+  "kind": "document",
+  "query_length": 128,
+  "document_length": 1024,
+  "gpu": "NVIDIA L40S"
+}

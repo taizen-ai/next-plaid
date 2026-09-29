@@ -43,6 +43,7 @@ next-plaid-onnx/python/build/
 
 # Test artifacts
 *.npy
+!taizen-bench/tests/fixtures/**/*.npy
 test_index/
 
 # Demo
