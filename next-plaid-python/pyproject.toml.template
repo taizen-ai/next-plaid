@@ -1,0 +1,30 @@
+[build-system]
+requires = ["maturin>=1.8.6", "numpy>=1.26.4"]
+build-backend = "maturin"
+
+[project]
+name = {{ package_name }}
+version = "1.7.0"
+description = "Python bindings for next-plaid multi-vector search"
+authors = [
+    { name = "Pau Montserrat" },
+]
+keywords = ["search", "multi-vector", "plaid", "colbert"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Rust",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.11"
+dependencies = ["numpy>=1.26.4"]
+
+[project.optional-dependencies]
+cuda = []
+openblas = []
+accelerate = []
+mkl = []
+
+[tool.maturin]
+bindings = "pyo3"
+manifest-path = "Cargo.toml"
+features = {{ features }}

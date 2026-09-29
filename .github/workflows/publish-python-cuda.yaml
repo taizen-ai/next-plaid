@@ -1,0 +1,98 @@
+name: Build and Publish Python CUDA Wheels
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Release tag (e.g. v1.7.0-taizen.1-cuda)"
+        required: true
+        type: string
+
+jobs:
+  build_wheels:
+    name: Build CUDA wheel for Python ${{ matrix.python-version }} (sm${{ matrix.compute-cap }})
+    runs-on: ubuntu-latest
+    container:
+      image: nvidia/cuda:13.1.0-devel-ubuntu24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+        compute-cap: ["80", "89", "90"]
+
+    steps:
+      - name: Install system dependencies
+        run: |
+          apt-get update
+          apt-get install -y software-properties-common curl git
+          add-apt-repository -y ppa:deadsnakes/ppa
+          apt-get update
+          apt-get install -y python${{ matrix.python-version }} python${{ matrix.python-version }}-venv python${{ matrix.python-version }}-dev
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python venv
+        run: |
+          python${{ matrix.python-version }} -m venv /opt/venv
+          echo "/opt/venv/bin" >> $GITHUB_PATH
+
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install Python build dependencies
+        run: pip install "maturin[patchelf]>=1.8.6" numpy>=1.26.4
+
+      - name: Generate CUDA pyproject.toml
+        working-directory: next-plaid-python
+        run: python generate_configs.py cuda
+
+      - name: Create libcuda stub
+        run: |
+          echo "INPUT(libcuda.so.1)" > /usr/local/cuda/lib64/libcuda.so
+          ln -sf /usr/local/cuda/targets/x86_64-linux/lib/stubs/libcuda.so /usr/local/cuda/lib64/libcuda.so.1
+
+      - name: Install auditwheel
+        run: pip install auditwheel
+
+      - name: Build wheel
+        working-directory: next-plaid-python
+        env:
+          CUDA_COMPUTE_CAP: ${{ matrix.compute-cap }}
+          LD_LIBRARY_PATH: /usr/local/cuda/lib64
+        run: |
+          maturin build --release --skip-auditwheel --out target/wheels
+          auditwheel repair --exclude libcuda.so.1 -w dist target/wheels/*.whl
+
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-cuda-sm${{ matrix.compute-cap }}-py${{ matrix.python-version }}
+          path: next-plaid-python/dist/*.whl
+
+  publish:
+    name: Publish sm${{ matrix.compute-cap }} to GitHub Releases
+    needs: build_wheels
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        compute-cap: ["80", "89", "90"]
+
+    steps:
+      - name: Download wheels for sm${{ matrix.compute-cap }}
+        uses: actions/download-artifact@v4
+        with:
+          pattern: wheels-cuda-sm${{ matrix.compute-cap }}-*
+          path: dist
+          merge-multiple: true
+
+      - name: Create Release and Upload Wheels
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag_name }}-sm${{ matrix.compute-cap }}
+          name: "Python CUDA Wheels sm${{ matrix.compute-cap }} - ${{ inputs.tag_name }}"
+          files: dist/*.whl

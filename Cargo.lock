@@ -2574,6 +2574,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "next-plaid-python"
+version = "1.7.0"
+dependencies = [
+ "ndarray 0.16.1",
+ "next-plaid",
+ "numpy",
+ "pyo3",
+]
+
+[[package]]
 name = "nix"
 version = "0.31.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
