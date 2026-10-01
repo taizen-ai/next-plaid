@@ -24,4 +24,4 @@ jobs:
         run: |
           export ORT_DYLIB_PATH=$(bash taizen-bench/scripts/ort-dylib.sh)
           MLATEON_DIR=~/mlateon cargo test --release -p taizen-bench --features openblas \
-            --test mlateon_parity -- --ignored --nocapture
+            --test mlateon_parity -- --ignored --nocapture --test-threads=1
