@@ -12,7 +12,7 @@ use taizen_bench::embset::EmbeddingSet;
 use taizen_bench::parity::{compare, ParityStats};
 
 const QUERY_LENGTH: usize = 128;
-const DOCUMENT_LENGTH: usize = 1024;
+const DOCUMENT_LENGTH: usize = 8192;
 
 fn fixtures() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/mlateon")
