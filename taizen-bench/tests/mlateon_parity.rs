@@ -12,7 +12,7 @@ use taizen_bench::embset::EmbeddingSet;
 use taizen_bench::parity::{compare, ParityStats};
 
 const QUERY_LENGTH: usize = 128;
-const DOCUMENT_LENGTH: usize = 1024;
+const DOCUMENT_LENGTH: usize = 8192;
 
 fn fixtures() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/mlateon")
@@ -30,6 +30,9 @@ fn onnx(kind: &str, quantized: bool) -> Vec<Array2<f32>> {
     let dir = std::env::var("MLATEON_DIR").expect("MLATEON_DIR must point at the export from scripts/export_mlateon.py");
     let model = Colbert::builder(dir.as_str())
         .with_threads(4)
+        // One text per batch: a batch pads to its longest text, and attention over
+        // DOCUMENT_LENGTH tokens costs heads × DOCUMENT_LENGTH² floats per text.
+        .with_batch_size(1)
         .with_quantized(quantized)
         .with_query_length(QUERY_LENGTH)
         .with_document_length(DOCUMENT_LENGTH)
